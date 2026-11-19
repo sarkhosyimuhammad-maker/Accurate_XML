@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konverter Excel ke XML</title>
+    <!-- Menggunakan Tailwind CSS untuk tata letak yang responsif dan modern -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Menggunakan SheetJS (xlsx) dari cdnjs yang diizinkan untuk membaca file Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* Kustomisasi scrollbar untuk area pratinjau kode */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .drop-zone-active {
+            border-color: #3b82f6 !important;
+            background-color: #eff6ff !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-600 text-white p-2 rounded-lg shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">Excel ke XML Converter</h1>
+                    <p class="text-xs text-slate-500 hidden sm:block">Konversi cepat, aman (100% di browser), dan dapat dikustomisasi</p>
+                </div>
+            </div>
+            <div>
+                <button id="btnSample" class="text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg border border-emerald-200 transition flex items-center space-x-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>Coba Data Contoh</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Notifikasi / Pesan Status (Pengganti alert()) -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Konten Utama -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Kolom Kiri: Unggah & Pengaturan -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- Kartu Unggah File -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-base font-semibold text-slate-800 mb-4 flex items-center space-x-2">
+                        <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-bold">1</span>
+                        <span>Pilih File Excel</span>
+                    </h2>
+                    
+                    <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-400 hover:bg-slate-50 transition cursor-pointer relative">
+                        <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <div class="space-y-2 pointer-events-none">
+                            <div class="mx-auto w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                            </div>
+                            <p class="text-sm font-medium text-slate-700">Klik untuk memilih atau seret file ke sini</p>
+                            <p class="text-xs text-slate-400">Mendukung format .XLSX, .XLS, atau .CSV</p>
+                        </div>
+                    </div>
+
+                    <!-- Info File Terpilih -->
+                    <div id="fileInfo" class="hidden mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
+                        <div class="flex items-center space-x-3 overflow-hidden">
+                            <div class="bg-emerald-100 text-emerald-700 p-2 rounded-md shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div class="truncate">
+                                <p id="fileName" class="text-sm font-medium text-slate-800 truncate">data.xlsx</p>
+                                <p id="fileStats" class="text-xs text-slate-500">0 baris data</p>
+                            </div>
+                        </div>
+                        <button id="btnClear" class="text-slate-400 hover:text-red-500 p-1.5 rounded-md transition" title="Hapus file">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Kartu Pengaturan Struktur XML -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                    <h2 class="text-base font-semibold text-slate-800 flex items-center space-x-2">
+                        <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-bold">2</span>
+                        <span>Pengaturan Struktur XML</span>
+                    </h2>
+
+                    <!-- Pilih Sheet -->
+                    <div>
+                        <label for="sheetSelect" class="block text-xs font-medium text-slate-600 mb-1">Pilih Lembar Kerja (Sheet)</label>
+                        <select id="sheetSelect" disabled class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 disabled:opacity-60">
+                            <option value="">-- Unggah file terlebih dahulu --</option>
+                        </select>
+                    </div>
+
+                    <!-- Nama Root & Row Tag -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="rootTag" class="block text-xs font-medium text-slate-600 mb-1">Tag Induk (Root)</label>
+                            <input type="text" id="rootTag" value="dataset" placeholder="dataset" class="w-full bg-white border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                        </div>
+                        <div>
+                            <label for="rowTag" class="block text-xs font-medium text-slate-600 mb-1">Tag Per Baris (Row)</label>
+                            <input type="text" id="rowTag" value="record" placeholder="record" class="w-full bg-white border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                        </div>
+                    </div>
+
+                    <!-- Opsi Tambahan -->
+                    <div class="space-y-2.5 pt-2 border-t border-slate-100">
+                        <label class="flex items-center space-x-2.5 cursor-pointer">
+                            <input type="checkbox" id="chkXmlDeclaration" checked class="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500">
+                            <span class="text-sm text-slate-700">Sertakan deklarasi <code>&lt;?xml version="1.0"?&gt;</code></span>
+                        </label>
+                        
+                        <label class="flex items-center space-x-2.5 cursor-pointer">
+                            <input type="checkbox" id="chkPrettyPrint" checked class="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500">
+                            <span class="text-sm text-slate-700">Format rapi dengan indentasi (Pretty Print)</span>
+                        </label>
+
+                        <label class="flex items-center space-x-2.5 cursor-pointer">
+                            <input type="checkbox" id="chkUseAttributes" class="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500">
+                            <span class="text-sm text-slate-700">Jadikan kolom sebagai atribut XML (bukan sub-tag)</span>
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Kolom Kanan: Pratinjau & Unduh -->
+            <div class="lg:col-span-7 flex flex-col">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col flex-grow overflow-hidden">
+                    
+                    <!-- Toolbar Pratinjau -->
+                    <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-bold">3</span>
+                            <h2 class="text-base font-semibold text-slate-800">Hasil Konversi XML</h2>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            <button id="btnCopy" disabled class="px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 focus:ring-2 focus:ring-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center space-x-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                                <span>Salin XML</span>
+                            </button>
+
+                            <a id="btnDownload" href="#" download="hasil_konversi.xml" aria-disabled="true" class="pointer-events-none opacity-50 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition flex items-center space-x-1.5 shadow-sm cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                <span>Unduh .XML</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Banner Info Alternatif Unduh untuk Mode Pratinjau Iframe -->
+                    <div id="downloadFallbackBanner" class="hidden px-5 py-2.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 flex flex-wrap items-center justify-between gap-2">
+                        <span>Jika unduhan otomatis diblokir oleh pratinjau browser, klik kanan tombol <b>Unduh .XML</b> lalu pilih <b>"Simpan tautan sebagai..." (Save link as)</b>, atau gunakan tombol <b>Salin XML</b>.</span>
+                    </div>
+
+                    <!-- Area Kode XML -->
+                    <div class="relative flex-grow bg-slate-900 text-slate-100 min-h-[420px] flex flex-col">
+                        <!-- Placeholder saat kosong -->
+                        <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                            </svg>
+                            <p class="text-sm font-medium text-slate-300">Belum ada data XML yang dihasilkan</p>
+                            <p class="text-xs text-slate-500 mt-1 max-w-xs">Unggah file Excel Anda di panel kiri atau klik tombol "Coba Data Contoh" di pojok kanan atas.</p>
+                        </div>
+
+                        <!-- Textarea/Pre untuk menampilkan XML -->
+                        <textarea id="xmlOutput" readonly spellcheck="false" class="hidden w-full h-full flex-grow bg-transparent text-emerald-300 font-mono text-xs sm:text-sm p-5 focus:outline-none resize-none leading-relaxed"></textarea>
+                    </div>
+
+                    <!-- Footer Info Baris -->
+                    <div class="px-5 py-2.5 bg-slate-100 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center">
+                        <span id="statusText">Siap menerima file</span>
+                        <span id="charCount">0 karakter</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // State Aplikasi
+        let currentWorkbook = null;
+        let currentFileName = 'hasil_konversi';
+        let currentBlobUrl = null;
+
+        // Elemen DOM
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileNameEl = document.getElementById('fileName');
+        const fileStatsEl = document.getElementById('fileStats');
+        const btnClear = document.getElementById('btnClear');
+        const btnSample = document.getElementById('btnSample');
+
+        const sheetSelect = document.getElementById('sheetSelect');
+        const rootTagInput = document.getElementById('rootTag');
+        const rowTagInput = document.getElementById('rowTag');
+        const chkXmlDeclaration = document.getElementById('chkXmlDeclaration');
+        const chkPrettyPrint = document.getElementById('chkPrettyPrint');
+        const chkUseAttributes = document.getElementById('chkUseAttributes');
+
+        const emptyState = document.getElementById('emptyState');
+        const xmlOutput = document.getElementById('xmlOutput');
+        const btnCopy = document.getElementById('btnCopy');
+        const btnDownload = document.getElementById('btnDownload');
+        const downloadFallbackBanner = document.getElementById('downloadFallbackBanner');
+        const statusText = document.getElementById('statusText');
+        const charCount = document.getElementById('charCount');
+
+        // Fungsi Utilitas: Menampilkan Notifikasi Toast (Pengganti alert)
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-red-600 text-white',
+                info: 'bg-slate-800 text-white'
+            };
+
+            toast.className = `${colors[type] || colors.info} px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center space-x-2 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto`;
+            toast.textContent = message;
+
+            container.appendChild(toast);
+
+            // Animasi masuk
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            // Hilangkan setelah 3 detik
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Fungsi Utilitas: Membersihkan nama kolom agar valid sebagai nama Tag XML
+        function sanitizeXmlTagName(name) {
+            if (!name || typeof name !== 'string') return 'kolom';
+            // Ganti spasi dan karakter non-alfanumerik dengan underscore
+            let sanitized = name.trim().replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+            // Tag XML tidak boleh diawali angka, tanda hubung, titik, atau kata "xml"
+            if (/^[^a-zA-Z_]/.test(sanitized) || /^xml/i.test(sanitized)) {
+                sanitized = '_' + sanitized;
+            }
+            return sanitized || 'kolom';
+        }
+
+        // Fungsi Utilitas: Escape karakter khusus XML pada nilai data
+        function escapeXmlValue(unsafe) {
+            if (unsafe === null || unsafe === undefined) return '';
+            return String(unsafe)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        }
+
+        // Memperbarui tautan unduhan secara langsung (Direct Anchor Binding agar tidak diblokir iframe)
+        function updateDownloadLink(xmlContent) {
+            if (currentBlobUrl) {
+                URL.revokeObjectURL(currentBlobUrl);
+                currentBlobUrl = null;
+            }
+
+            try {
+                const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8' });
+                currentBlobUrl = URL.createObjectURL(blob);
+                btnDownload.href = currentBlobUrl;
+            } catch (e) {
+                // Fallback ke Data URI jika Blob URL dibatasi oleh lingkungan sandbox
+                btnDownload.href = 'data:application/xml;charset=utf-8,' + encodeURIComponent(xmlContent);
+            }
+
+            btnDownload.setAttribute('download', `${currentFileName}.xml`);
+            btnDownload.classList.remove('pointer-events-none', 'opacity-50');
+            btnDownload.removeAttribute('aria-disabled');
+        }
+
+        // Fungsi Utama: Konversi Data JSON (dari SheetJS) ke String XML
+        function convertSheetToXml() {
+            if (!currentWorkbook) return;
+
+            const selectedSheetName = sheetSelect.value;
+            const worksheet = currentWorkbook.Sheets[selectedSheetName];
+            
+            // Mengubah worksheet menjadi array objek JSON, mengisi sel kosong dengan string kosong
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+            const rootTag = sanitizeXmlTagName(rootTagInput.value || 'dataset');
+            const rowTag = sanitizeXmlTagName(rowTagInput.value || 'record');
+            const includeDecl = chkXmlDeclaration.checked;
+            const pretty = chkPrettyPrint.checked;
+            const useAttrs = chkUseAttributes.checked;
+
+            const nl = pretty ? '\n' : '';
+            const indent1 = pretty ? '  ' : '';
+            const indent2 = pretty ? '    ' : '';
+
+            let xmlParts = [];
+
+            if (includeDecl) {
+                xmlParts.push(`<?xml version="1.0" encoding="UTF-8"?>`);
+            }
+
+            xmlParts.push(`<${rootTag}>`);
+
+            jsonData.forEach((row) => {
+                const keys = Object.keys(row);
+                
+                if (useAttrs) {
+                    // Mode Atribut: <record kolom1="nilai1" kolom2="nilai2" />
+                    let attrs = keys.map(key => {
+                        const cleanKey = sanitizeXmlTagName(key);
+                        const cleanVal = escapeXmlValue(row[key]);
+                        return `${cleanKey}="${cleanVal}"`;
+                    }).join(' ');
+                    
+                    xmlParts.push(`${indent1}<${rowTag}${attrs ? ' ' + attrs : ''} />`);
+                } else {
+                    // Mode Elemen/Sub-tag standar
+                    xmlParts.push(`${indent1}<${rowTag}>`);
+                    keys.forEach(key => {
+                        const cleanKey = sanitizeXmlTagName(key);
+                        const cleanVal = escapeXmlValue(row[key]);
+                        xmlParts.push(`${indent2}<${cleanKey}>${cleanVal}</${cleanKey}>`);
+                    });
+                    xmlParts.push(`${indent1}</${rowTag}>`);
+                }
+            });
+
+            xmlParts.push(`</${rootTag}>`);
+
+            const finalXml = xmlParts.join(nl);
+
+            // Perbarui UI
+            emptyState.classList.add('hidden');
+            xmlOutput.classList.remove('hidden');
+            xmlOutput.value = finalXml;
+
+            btnCopy.disabled = false;
+            updateDownloadLink(finalXml);
+
+            fileStatsEl.textContent = `${jsonData.length} baris data • Sheet: ${selectedSheetName}`;
+            statusText.textContent = `Berhasil mengonversi ${jsonData.length} baris`;
+            charCount.textContent = `${finalXml.length.toLocaleString('id-ID')} karakter`;
+        }
+
+        // Memproses Workbook yang berhasil dibaca
+        function loadWorkbook(workbook, fileName) {
+            currentWorkbook = workbook;
+            currentFileName = fileName.replace(/\.[^/.]+$/, ""); // Hapus ekstensi lama
+
+            // Isi dropdown pilihan sheet
+            sheetSelect.innerHTML = '';
+            workbook.SheetNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                sheetSelect.appendChild(option);
+            });
+            sheetSelect.disabled = false;
+
+            // Tampilkan info file
+            fileNameEl.textContent = fileName;
+            fileInfo.classList.remove('hidden');
+
+            // Jalankan konversi langsung
+            convertSheetToXml();
+            showToast('File berhasil dimuat dan dikonversi!', 'success');
+        }
+
+        // Handler pembacaan file unggahan
+        function handleFile(file) {
+            if (!file) return;
+
+            const validExtensions = ['.xlsx', '.xls', '.csv'];
+            const isValid = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+
+            if (!isValid) {
+                showToast('Format file tidak didukung. Harap gunakan .xlsx, .xls, atau .csv', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    loadWorkbook(workbook, file.name);
+                } catch (err) {
+                    console.error(err);
+                    showToast('Gagal membaca file Excel. Pastikan file tidak rusak.', 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Event Listeners: Input File & Drag-and-Drop
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drop-zone-active');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drop-zone-active');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drop-zone-active');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Event Listener: Reset / Hapus File
+        btnClear.addEventListener('click', () => {
+            currentWorkbook = null;
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            sheetSelect.innerHTML = '<option value="">-- Unggah file terlebih dahulu --</option>';
+            sheetSelect.disabled = true;
+
+            xmlOutput.value = '';
+            xmlOutput.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            downloadFallbackBanner.classList.add('hidden');
+
+            btnCopy.disabled = true;
+            btnDownload.href = '#';
+            btnDownload.classList.add('pointer-events-none', 'opacity-50');
+            btnDownload.setAttribute('aria-disabled', 'true');
+
+            if (currentBlobUrl) {
+                URL.revokeObjectURL(currentBlobUrl);
+                currentBlobUrl = null;
+            }
+
+            statusText.textContent = 'Siap menerima file';
+            charCount.textContent = '0 karakter';
+            showToast('Data dibersihkan', 'info');
+        });
+
+        // Event Listener: Data Contoh (Untuk pengujian cepat)
+        btnSample.addEventListener('click', () => {
+            const sampleData = [
+                { ID_Produk: "PRD-001", Nama_Barang: "Laptop Pro 14", Kategori: "Elektronik", Harga: 18500000, Stok: 12 },
+                { ID_Produk: "PRD-002", Nama_Barang: "Keyboard Mekanikal", Kategori: "Aksesoris & PC", Harga: 850000, Stok: 35 },
+                { ID_Produk: "PRD-003", Nama_Barang: "Monitor 27\" 4K", Kategori: "Elektronik", Harga: 5200000, Stok: 8 }
+            ];
+
+            const worksheet = XLSX.utils.json_to_sheet(sampleData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Inventaris");
+
+            loadWorkbook(workbook, "Contoh_Inventaris.xlsx");
+        });
+
+        // Event Listeners: Perubahan Pengaturan Real-time
+        [sheetSelect, rootTagInput, rowTagInput, chkXmlDeclaration, chkPrettyPrint, chkUseAttributes].forEach(el => {
+            el.addEventListener('input', convertSheetToXml);
+            el.addEventListener('change', convertSheetToXml);
+        });
+
+        // Event Listener: Salin ke Clipboard (Menggunakan execCommand agar kompatibel di iframe)
+        btnCopy.addEventListener('click', () => {
+            if (!xmlOutput.value) return;
+            
+            xmlOutput.select();
+            xmlOutput.setSelectionRange(0, 99999); // Untuk perangkat mobile
+            
+            try {
+                document.execCommand('copy');
+                showToast('Kode XML berhasil disalin ke clipboard!', 'success');
+            } catch (err) {
+                showToast('Gagal menyalin teks.', 'error');
+            }
+            window.getSelection().removeAllRanges();
+        });
+
+        // Event Listener: Notifikasi & Panduan Fallback saat tombol Unduh diklik
+        btnDownload.addEventListener('click', (e) => {
+            if (!xmlOutput.value) {
+                e.preventDefault();
+                return;
+            }
+            // Tampilkan tips jika lingkungan pratinjau memblokir pengunduhan otomatis
+            downloadFallbackBanner.classList.remove('hidden');
+            showToast(`Memproses unduhan ${currentFileName}.xml...`, 'success');
+        });
+    </script>
+</body>
+</html>
