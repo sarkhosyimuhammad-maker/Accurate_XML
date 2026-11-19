@@ -44,15 +44,21 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold text-slate-900 tracking-tight">Excel ke XML Converter</h1>
-                    <p class="text-xs text-slate-500 hidden sm:block">Konversi cepat, aman (100% di browser), dan dapat dikustomisasi</p>
+                    <p class="text-xs text-slate-500 hidden sm:block">Mendukung Mode Standar & Format Accurate (NMEXML Sales Invoice)</p>
                 </div>
             </div>
-            <div>
-                <button id="btnSample" class="text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg border border-emerald-200 transition flex items-center space-x-1.5">
+            <div class="flex items-center space-x-2">
+                <button id="btnSampleAccurate" class="text-xs sm:text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg border border-blue-200 transition flex items-center space-x-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Contoh Accurate</span>
+                </button>
+                <button id="btnSample" class="hidden sm:flex text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg border border-emerald-200 transition items-center space-x-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    <span>Coba Data Contoh</span>
+                    <span>Contoh Umum</span>
                 </button>
             </div>
         </div>
@@ -116,6 +122,16 @@
                         <span>Pengaturan Struktur XML</span>
                     </h2>
 
+                    <!-- Pilihan Mode Skema -->
+                    <div>
+                        <label for="schemaMode" class="block text-xs font-medium text-slate-600 mb-1">Format / Skema XML</label>
+                        <select id="schemaMode" class="w-full bg-blue-50/60 border border-blue-300 text-slate-900 font-medium text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                            <option value="accurate_si" selected>Accurate XML (NMEXML - Sales Invoice)</option>
+                            <option value="generic">Umum / Tabel Datar (Custom Tags)</option>
+                        </select>
+                        <p id="schemaHint" class="text-[11px] text-slate-500 mt-1">Otomatis mengelompokkan transaksi, atribut header, sub-tag &lt;ITEMLINE&gt;, dan format tanggal Accurate.</p>
+                    </div>
+
                     <!-- Pilih Sheet -->
                     <div>
                         <label for="sheetSelect" class="block text-xs font-medium text-slate-600 mb-1">Pilih Lembar Kerja (Sheet)</label>
@@ -124,19 +140,43 @@
                         </select>
                     </div>
 
-                    <!-- Nama Root & Row Tag -->
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label for="rootTag" class="block text-xs font-medium text-slate-600 mb-1">Tag Induk (Root)</label>
-                            <input type="text" id="rootTag" value="dataset" placeholder="dataset" class="w-full bg-white border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                    <!-- Pengaturan Khusus Mode Accurate -->
+                    <div id="accurateSettings" class="space-y-3 pt-2 border-t border-slate-100">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="accEximId" class="block text-xs font-medium text-slate-600 mb-1">Default EximID</label>
+                                <input type="text" id="accEximId" value="10" placeholder="10" class="w-full bg-white border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
+                            </div>
+                            <div>
+                                <label for="accBranchCode" class="block text-xs font-medium text-slate-600 mb-1">Default BranchCode</label>
+                                <input type="text" id="accBranchCode" value="" placeholder="Otomatis dari Excel" class="w-full bg-white border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
+                            </div>
                         </div>
-                        <div>
-                            <label for="rowTag" class="block text-xs font-medium text-slate-600 mb-1">Tag Per Baris (Row)</label>
-                            <input type="text" id="rowTag" value="record" placeholder="record" class="w-full bg-white border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
-                        </div>
+                        <label class="flex items-center space-x-2.5 cursor-pointer">
+                            <input type="checkbox" id="chkOmitEmpty" checked class="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500">
+                            <span class="text-xs text-slate-700">Abaikan kolom opsional yang kosong (seperti ITEMRESERVED1..10)</span>
+                        </label>
                     </div>
 
-                    <!-- Opsi Tambahan -->
+                    <!-- Pengaturan Khusus Mode Umum -->
+                    <div id="genericSettings" class="hidden space-y-3 pt-2 border-t border-slate-100">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="rootTag" class="block text-xs font-medium text-slate-600 mb-1">Tag Induk (Root)</label>
+                                <input type="text" id="rootTag" value="dataset" placeholder="dataset" class="w-full bg-white border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
+                            </div>
+                            <div>
+                                <label for="rowTag" class="block text-xs font-medium text-slate-600 mb-1">Tag Per Baris (Row)</label>
+                                <input type="text" id="rowTag" value="record" placeholder="record" class="w-full bg-white border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
+                            </div>
+                        </div>
+                        <label class="flex items-center space-x-2.5 cursor-pointer">
+                            <input type="checkbox" id="chkUseAttributes" class="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500">
+                            <span class="text-xs text-slate-700">Jadikan kolom sebagai atribut XML (bukan sub-tag)</span>
+                        </label>
+                    </div>
+
+                    <!-- Opsi Format Tampilan Umum -->
                     <div class="space-y-2.5 pt-2 border-t border-slate-100">
                         <label class="flex items-center space-x-2.5 cursor-pointer">
                             <input type="checkbox" id="chkXmlDeclaration" checked class="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500">
@@ -146,11 +186,6 @@
                         <label class="flex items-center space-x-2.5 cursor-pointer">
                             <input type="checkbox" id="chkPrettyPrint" checked class="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500">
                             <span class="text-sm text-slate-700">Format rapi dengan indentasi (Pretty Print)</span>
-                        </label>
-
-                        <label class="flex items-center space-x-2.5 cursor-pointer">
-                            <input type="checkbox" id="chkUseAttributes" class="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500">
-                            <span class="text-sm text-slate-700">Jadikan kolom sebagai atribut XML (bukan sub-tag)</span>
                         </label>
                     </div>
                 </div>
@@ -191,14 +226,14 @@
                     </div>
 
                     <!-- Area Kode XML -->
-                    <div class="relative flex-grow bg-slate-900 text-slate-100 min-h-[420px] flex flex-col">
+                    <div class="relative flex-grow bg-slate-900 text-slate-100 min-h-[450px] flex flex-col">
                         <!-- Placeholder saat kosong -->
                         <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-slate-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                             </svg>
                             <p class="text-sm font-medium text-slate-300">Belum ada data XML yang dihasilkan</p>
-                            <p class="text-xs text-slate-500 mt-1 max-w-xs">Unggah file Excel Anda di panel kiri atau klik tombol "Coba Data Contoh" di pojok kanan atas.</p>
+                            <p class="text-xs text-slate-500 mt-1 max-w-xs">Unggah file Excel Anda di panel kiri atau klik tombol "Contoh Accurate" di atas untuk melihat struktur NMEXML.</p>
                         </div>
 
                         <!-- Textarea/Pre untuk menampilkan XML -->
@@ -230,8 +265,18 @@
         const fileStatsEl = document.getElementById('fileStats');
         const btnClear = document.getElementById('btnClear');
         const btnSample = document.getElementById('btnSample');
+        const btnSampleAccurate = document.getElementById('btnSampleAccurate');
+
+        const schemaModeSelect = document.getElementById('schemaMode');
+        const schemaHint = document.getElementById('schemaHint');
+        const accurateSettings = document.getElementById('accurateSettings');
+        const genericSettings = document.getElementById('genericSettings');
 
         const sheetSelect = document.getElementById('sheetSelect');
+        const accEximId = document.getElementById('accEximId');
+        const accBranchCode = document.getElementById('accBranchCode');
+        const chkOmitEmpty = document.getElementById('chkOmitEmpty');
+
         const rootTagInput = document.getElementById('rootTag');
         const rowTagInput = document.getElementById('rowTag');
         const chkXmlDeclaration = document.getElementById('chkXmlDeclaration');
@@ -246,7 +291,29 @@
         const statusText = document.getElementById('statusText');
         const charCount = document.getElementById('charCount');
 
-        // Fungsi Utilitas: Menampilkan Notifikasi Toast (Pengganti alert)
+        // Daftar Urutan Tag Standar Accurate Sales Invoice
+        const ACCURATE_INVOICE_HEADER_TAGS = [
+            'TRANSACTIONID', 'INVOICENO', 'INVOICEDATE', 'TAX1ID', 'TAX1CODE', 'TAX2CODE',
+            'TAX1RATE', 'TAX2RATE', 'TAX1AMOUNT', 'TAX2AMOUNT', 'RATE', 'INCLUSIVETAX',
+            'CUSTOMERISTAXABLE', 'CASHDISCOUNT', 'CASHDISCPC', 'INVOICEAMOUNT', 'FREIGHT',
+            'TERMSID', 'FOB', 'PURCHASEORDERNO', 'WAREHOUSEID_HEADER', 'DESCRIPTION',
+            'SHIPDATE', 'DELIVERYORDER', 'FISCALRATE', 'TAXDATE', 'CUSTOMERID', 'PRINTED',
+            'ARACCOUNT', 'TAXFORMNUMBER', 'TAXFORMCODE', 'CURRENCYNAME', 'AUTOMATICNUMBERING',
+            'ISDOWNPAYMENT', 'DOWNPAYMENTAMOUNT'
+        ];
+
+        const ACCURATE_ITEMLINE_TAGS = [
+            'KeyID', 'ITEMNO', 'QUANTITY', 'ITEMUNIT', 'UNITRATIO',
+            'ITEMRESERVED1', 'ITEMRESERVED2', 'ITEMRESERVED3', 'ITEMRESERVED4', 'ITEMRESERVED5',
+            'ITEMRESERVED6', 'ITEMRESERVED7', 'ITEMRESERVED8', 'ITEMRESERVED9', 'ITEMRESERVED10',
+            'ITEMOVDESC', 'UNITPRICE', 'ITEMDISCPC', 'TAXCODES', 'PROJECTID', 'DEPTID',
+            'SOSEQ', 'BRUTOUNITPRICE', 'WAREHOUSEID', 'QTYCONTROL', 'DOSEQ', 'SOID', 'DOID',
+            'SNoperation', 'SERIALNUMBER', 'EXPIREDDATE', 'QUANTITY2', 'SNSIGN'
+        ];
+
+        const ACCURATE_DATE_FIELDS = ['INVOICEDATE', 'SHIPDATE', 'TAXDATE', 'EXPIREDDATE'];
+
+        // Fungsi Utilitas: Menampilkan Notifikasi Toast
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -262,12 +329,10 @@
 
             container.appendChild(toast);
 
-            // Animasi masuk
             requestAnimationFrame(() => {
                 toast.classList.remove('translate-y-2', 'opacity-0');
             });
 
-            // Hilangkan setelah 3 detik
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
@@ -277,9 +342,7 @@
         // Fungsi Utilitas: Membersihkan nama kolom agar valid sebagai nama Tag XML
         function sanitizeXmlTagName(name) {
             if (!name || typeof name !== 'string') return 'kolom';
-            // Ganti spasi dan karakter non-alfanumerik dengan underscore
             let sanitized = name.trim().replace(/[^a-zA-Z0-9_\-\.]/g, '_');
-            // Tag XML tidak boleh diawali angka, tanda hubung, titik, atau kata "xml"
             if (/^[^a-zA-Z_]/.test(sanitized) || /^xml/i.test(sanitized)) {
                 sanitized = '_' + sanitized;
             }
@@ -297,7 +360,58 @@
                 .replace(/'/g, '&apos;');
         }
 
-        // Memperbarui tautan unduhan secara langsung (Direct Anchor Binding agar tidak diblokir iframe)
+        // Fungsi Utilitas: Konversi Excel Serial Date ke Format Accurate "DD/MM/YYYY 00.00.00"
+        function formatAccurateDate(val) {
+            if (val === null || val === undefined || val === '') return '';
+            
+            // Jika sudah berbentuk string tanggal seperti "01/08/2026" atau "01/08/2026 00.00.00"
+            if (typeof val === 'string') {
+                const trimmed = val.trim();
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+                    return `${trimmed} 00.00.00`;
+                }
+                return trimmed;
+            }
+
+            // Jika berbentuk angka serial Excel (contoh: 46235 -> 01/08/2026)
+            if (typeof val === 'number' && val > 20000 && val < 90000) {
+                // Epoch Excel: 30 Desember 1899 (koreksi bug tahun kabisat 1900 Excel)
+                const utcDays = Math.floor(val - 25569);
+                const utcValue = utcDays * 86400;
+                const dateInfo = new Date(utcValue * 1000);
+
+                const dd = String(dateInfo.getUTCDate()).padStart(2, '0');
+                const mm = String(dateInfo.getUTCMonth() + 1).padStart(2, '0');
+                const yyyy = dateInfo.getUTCFullYear();
+
+                return `${dd}/${mm}/${yyyy} 00.00.00`;
+            }
+
+            return String(val);
+        }
+
+        // Helper untuk mencari nilai kolom secara case-insensitive dari baris Excel
+        function getRowField(row, targetKey) {
+            if (targetKey in row) return row[targetKey];
+            const lowerTarget = targetKey.toLowerCase();
+            for (const k of Object.keys(row)) {
+                if (k.trim().toLowerCase() === lowerTarget) {
+                    return row[k];
+                }
+            }
+            return undefined;
+        }
+
+        // Helper membuat elemen XML (atau self-closing tag jika kosong)
+        function buildXmlTag(tagName, value, indentStr) {
+            const valStr = (value === null || value === undefined) ? '' : String(value);
+            if (valStr === '') {
+                return `${indentStr}<${tagName}/>`;
+            }
+            return `${indentStr}<${tagName}>${escapeXmlValue(valStr)}</${tagName}>`;
+        }
+
+        // Memperbarui tautan unduhan secara langsung
         function updateDownloadLink(xmlContent) {
             if (currentBlobUrl) {
                 URL.revokeObjectURL(currentBlobUrl);
@@ -309,7 +423,6 @@
                 currentBlobUrl = URL.createObjectURL(blob);
                 btnDownload.href = currentBlobUrl;
             } catch (e) {
-                // Fallback ke Data URI jika Blob URL dibatasi oleh lingkungan sandbox
                 btnDownload.href = 'data:application/xml;charset=utf-8,' + encodeURIComponent(xmlContent);
             }
 
@@ -318,20 +431,127 @@
             btnDownload.removeAttribute('aria-disabled');
         }
 
-        // Fungsi Utama: Konversi Data JSON (dari SheetJS) ke String XML
-        function convertSheetToXml() {
-            if (!currentWorkbook) return;
+        // Generator XML Khusus Format Accurate (NMEXML - Sales Invoice)
+        function generateAccurateSalesInvoiceXml(jsonData, pretty, includeDecl) {
+            const nl = pretty ? '\n' : '';
+            const ind1 = pretty ? '  ' : '';
+            const ind2 = pretty ? '    ' : '';
+            const ind3 = pretty ? '      ' : '';
+            const ind4 = pretty ? '        ' : '';
 
-            const selectedSheetName = sheetSelect.value;
-            const worksheet = currentWorkbook.Sheets[selectedSheetName];
-            
-            // Mengubah worksheet menjadi array objek JSON, mengisi sel kosong dengan string kosong
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+            const omitEmpty = chkOmitEmpty.checked;
+            let xmlParts = [];
 
+            if (includeDecl) {
+                xmlParts.push(`<?xml version="1.0" encoding="UTF-8"?>`);
+            }
+
+            if (jsonData.length === 0) {
+                xmlParts.push(`<NMEXML EximID="${escapeXmlValue(accEximId.value || '10')}" BranchCode="${escapeXmlValue(accBranchCode.value)}" ACCOUNTANTCOPYID="">`);
+                xmlParts.push(`${ind1}<TRANSACTIONS OnError="CONTINUE"/>`);
+                xmlParts.push(`</NMEXML>`);
+                return { xml: xmlParts.join(nl), invoiceCount: 0 };
+            }
+
+            // Ambil atribut root dari baris pertama Excel (atau fallback ke pengaturan UI)
+            const firstRow = jsonData[0];
+            const eximId = getRowField(firstRow, 'EximID') || accEximId.value || '10';
+            const branchCode = accBranchCode.value !== '' ? accBranchCode.value : (getRowField(firstRow, 'BranchCode') ?? '');
+            const accCopyId = getRowField(firstRow, 'ACCOUNTANTCOPYID') ?? '';
+            const onError = getRowField(firstRow, 'OnError') || 'CONTINUE';
+
+            xmlParts.push(`<NMEXML EximID="${escapeXmlValue(eximId)}" BranchCode="${escapeXmlValue(branchCode)}" ACCOUNTANTCOPYID="${escapeXmlValue(accCopyId)}">`);
+            xmlParts.push(`${ind1}<TRANSACTIONS OnError="${escapeXmlValue(onError)}">`);
+
+            // Kelompokkan baris berdasarkan TRANSACTIONID atau INVOICENO agar 1 faktur dengan banyak barang tergabung rapi
+            const invoiceGroups = [];
+            const groupMap = new Map();
+
+            jsonData.forEach((row, idx) => {
+                const txId = getRowField(row, 'TRANSACTIONID');
+                const invNo = getRowField(row, 'INVOICENO');
+                const groupKey = (txId !== undefined && txId !== '') ? `TX_${txId}` :
+                                 (invNo !== undefined && invNo !== '') ? `INV_${invNo}` : `ROW_${idx}`;
+
+                if (!groupMap.has(groupKey)) {
+                    const newGroup = { headerRow: row, items: [] };
+                    groupMap.set(groupKey, newGroup);
+                    invoiceGroups.push(newGroup);
+                }
+                groupMap.get(groupKey).items.push(row);
+            });
+
+            // Bangun XML untuk setiap SALESINVOICE
+            invoiceGroups.forEach((group) => {
+                const hRow = group.headerRow;
+                const op = getRowField(hRow, 'operation') || 'Add';
+                const reqId = getRowField(hRow, 'REQUESTID') || '1';
+
+                xmlParts.push(`${ind2}<SALESINVOICE operation="${escapeXmlValue(op)}" REQUESTID="${escapeXmlValue(reqId)}">`);
+
+                // 1. Tulis Tag-tag Header Faktur sesuai urutan standar Accurate
+                ACCURATE_INVOICE_HEADER_TAGS.forEach(tag => {
+                    let val = getRowField(hRow, tag);
+                    if (val === undefined) return; // Lewati jika kolom memang tidak ada di Excel
+
+                    if (ACCURATE_DATE_FIELDS.includes(tag)) {
+                        val = formatAccurateDate(val);
+                    }
+
+                    // Jika opsi abaikan kolom kosong aktif, lewati tag yang kosong kecuali tag wajib
+                    if (omitEmpty && val === '' && !['TRANSACTIONID', 'INVOICENO', 'INVOICEDATE', 'CUSTOMERID'].includes(tag)) {
+                        return;
+                    }
+
+                    xmlParts.push(buildXmlTag(tag, val, ind3));
+                });
+
+                // 2. Tulis Sub-Tag <ITEMLINE> untuk setiap baris barang dalam faktur ini
+                group.items.forEach((itemRow) => {
+                    // Di Excel seringkali nama kolom operasi item adalah "operation2" atau "item_operation"
+                    const itemOp = getRowField(itemRow, 'operation2') || getRowField(itemRow, 'itemoperation') || 'Add';
+                    xmlParts.push(`${ind3}<ITEMLINE operation="${escapeXmlValue(itemOp)}">`);
+
+                    ACCURATE_ITEMLINE_TAGS.forEach(tag => {
+                        let val = getRowField(itemRow, tag);
+                        if (val === undefined) return;
+
+                        if (ACCURATE_DATE_FIELDS.includes(tag)) {
+                            val = formatAccurateDate(val);
+                        }
+
+                        // Abaikan kolom kosong opsional (seperti ITEMRESERVED1..10, SOSEQ, DOSEQ, dll.) jika dicentang
+                        if (omitEmpty && val === '') {
+                            return;
+                        }
+
+                        xmlParts.push(buildXmlTag(tag, val, ind4));
+                    });
+
+                    xmlParts.push(`${ind3}</ITEMLINE>`);
+                });
+
+                // 3. Tulis <SALESMANID> di bagian paling bawah SALESINVOICE (sesuai urutan standar Accurate)
+                const salesmanVal = getRowField(hRow, 'SALESMANID');
+                if (salesmanVal !== undefined) {
+                    xmlParts.push(buildXmlTag('SALESMANID', salesmanVal, ind3));
+                } else {
+                    xmlParts.push(`${ind3}<SALESMANID/>`);
+                }
+
+                xmlParts.push(`${ind2}</SALESINVOICE>`);
+            });
+
+            xmlParts.push(`${ind1}</TRANSACTIONS>`);
+            xmlParts.push(`</NMEXML>`);
+
+            return { xml: xmlParts.join(nl), invoiceCount: invoiceGroups.length };
+        }
+
+        // Generator XML Mode Umum (Flat Table)
+        function generateGenericXml(jsonData, pretty, includeDecl) {
             const rootTag = sanitizeXmlTagName(rootTagInput.value || 'dataset');
             const rowTag = sanitizeXmlTagName(rowTagInput.value || 'record');
-            const includeDecl = chkXmlDeclaration.checked;
-            const pretty = chkPrettyPrint.checked;
             const useAttrs = chkUseAttributes.checked;
 
             const nl = pretty ? '\n' : '';
@@ -350,7 +570,6 @@
                 const keys = Object.keys(row);
                 
                 if (useAttrs) {
-                    // Mode Atribut: <record kolom1="nilai1" kolom2="nilai2" />
                     let attrs = keys.map(key => {
                         const cleanKey = sanitizeXmlTagName(key);
                         const cleanVal = escapeXmlValue(row[key]);
@@ -359,12 +578,11 @@
                     
                     xmlParts.push(`${indent1}<${rowTag}${attrs ? ' ' + attrs : ''} />`);
                 } else {
-                    // Mode Elemen/Sub-tag standar
                     xmlParts.push(`${indent1}<${rowTag}>`);
                     keys.forEach(key => {
                         const cleanKey = sanitizeXmlTagName(key);
                         const cleanVal = escapeXmlValue(row[key]);
-                        xmlParts.push(`${indent2}<${cleanKey}>${cleanVal}</${cleanKey}>`);
+                        xmlParts.push(buildXmlTag(cleanKey, row[key], indent2));
                     });
                     xmlParts.push(`${indent1}</${rowTag}>`);
                 }
@@ -372,7 +590,34 @@
 
             xmlParts.push(`</${rootTag}>`);
 
-            const finalXml = xmlParts.join(nl);
+            return xmlParts.join(nl);
+        }
+
+        // Fungsi Utama: Konversi Data JSON ke String XML berdasarkan Mode
+        function convertSheetToXml() {
+            if (!currentWorkbook) return;
+
+            const selectedSheetName = sheetSelect.value;
+            const worksheet = currentWorkbook.Sheets[selectedSheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+            const includeDecl = chkXmlDeclaration.checked;
+            const pretty = chkPrettyPrint.checked;
+            const mode = schemaModeSelect.value;
+
+            let finalXml = '';
+            let infoSummary = '';
+
+            if (mode === 'accurate_si') {
+                const res = generateAccurateSalesInvoiceXml(jsonData, pretty, includeDecl);
+                finalXml = res.xml;
+                infoSummary = `${res.invoiceCount} faktur (${jsonData.length} baris item) • Sheet: ${selectedSheetName}`;
+                statusText.textContent = `Berhasil mengonversi ${res.invoiceCount} faktur Accurate`;
+            } else {
+                finalXml = generateGenericXml(jsonData, pretty, includeDecl);
+                infoSummary = `${jsonData.length} baris data • Sheet: ${selectedSheetName}`;
+                statusText.textContent = `Berhasil mengonversi ${jsonData.length} baris`;
+            }
 
             // Perbarui UI
             emptyState.classList.add('hidden');
@@ -382,17 +627,29 @@
             btnCopy.disabled = false;
             updateDownloadLink(finalXml);
 
-            fileStatsEl.textContent = `${jsonData.length} baris data • Sheet: ${selectedSheetName}`;
-            statusText.textContent = `Berhasil mengonversi ${jsonData.length} baris`;
+            fileStatsEl.textContent = infoSummary;
             charCount.textContent = `${finalXml.length.toLocaleString('id-ID')} karakter`;
         }
+
+        // Toggle tampilan pengaturan berdasarkan mode skema
+        schemaModeSelect.addEventListener('change', () => {
+            if (schemaModeSelect.value === 'accurate_si') {
+                accurateSettings.classList.remove('hidden');
+                genericSettings.classList.add('hidden');
+                schemaHint.textContent = 'Otomatis mengelompokkan transaksi, atribut header, sub-tag <ITEMLINE>, dan format tanggal Accurate.';
+            } else {
+                accurateSettings.classList.add('hidden');
+                genericSettings.classList.remove('hidden');
+                schemaHint.textContent = 'Mengubah setiap baris Excel menjadi tag datar standar sesuai nama kolom.';
+            }
+            convertSheetToXml();
+        });
 
         // Memproses Workbook yang berhasil dibaca
         function loadWorkbook(workbook, fileName) {
             currentWorkbook = workbook;
-            currentFileName = fileName.replace(/\.[^/.]+$/, ""); // Hapus ekstensi lama
+            currentFileName = fileName.replace(/\.[^/.]+$/, "");
 
-            // Isi dropdown pilihan sheet
             sheetSelect.innerHTML = '';
             workbook.SheetNames.forEach(name => {
                 const option = document.createElement('option');
@@ -402,11 +659,9 @@
             });
             sheetSelect.disabled = false;
 
-            // Tampilkan info file
             fileNameEl.textContent = fileName;
             fileInfo.classList.remove('hidden');
 
-            // Jalankan konversi langsung
             convertSheetToXml();
             showToast('File berhasil dimuat dan dikonversi!', 'success');
         }
@@ -489,12 +744,55 @@
             showToast('Data dibersihkan', 'info');
         });
 
-        // Event Listener: Data Contoh (Untuk pengujian cepat)
+        // Event Listener: Data Contoh Accurate (Sesuai struktur gambar pertama)
+        btnSampleAccurate.addEventListener('click', () => {
+            schemaModeSelect.value = 'accurate_si';
+            accurateSettings.classList.remove('hidden');
+            genericSettings.classList.add('hidden');
+
+            const sampleAccurateData = [
+                {
+                    EximID: 10, BranchCode: "1171393797", ACCOUNTANTCOPYID: "", OnError: "CONTINUE",
+                    operation: "Add", REQUESTID: 1, TRANSACTIONID: 8261038,
+                    INVOICENO: "IPL-08-26/1038", INVOICEDATE: 46235, TAX1RATE: 0, TAX2RATE: 0,
+                    RATE: 1, INCLUSIVETAX: 0, CUSTOMERISTAXABLE: 0, CASHDISCOUNT: 0,
+                    INVOICEAMOUNT: 25000, FREIGHT: 0, TERMSID: "C.O.D", DESCRIPTION: "IPL 08-2026",
+                    SHIPDATE: 46235, FISCALRATE: 1, TAXDATE: 46235, CUSTOMERID: "B-005",
+                    PRINTED: 0, ARACCOUNT: 110302, CURRENCYNAME: "IDR",
+                    operation2: "Add", KeyID: 8261038, ITEMNO: "IPL-008", QUANTITY: 1,
+                    UNITRATIO: 1, UNITPRICE: 25000, BRUTOUNITPRICE: 25000, WAREHOUSEID: "CENTRE",
+                    QTYCONTROL: 0, SALESMANID: ""
+                },
+                {
+                    EximID: 10, BranchCode: "1171393797", ACCOUNTANTCOPYID: "", OnError: "CONTINUE",
+                    operation: "Add", REQUESTID: 1, TRANSACTIONID: 8261039,
+                    INVOICENO: "IPL-08-26/1039", INVOICEDATE: 46235, TAX1RATE: 0, TAX2RATE: 0,
+                    RATE: 1, INCLUSIVETAX: 0, CUSTOMERISTAXABLE: 0, CASHDISCOUNT: 0,
+                    INVOICEAMOUNT: 50000, FREIGHT: 0, TERMSID: "C.O.D", DESCRIPTION: "IPL 08-2026",
+                    SHIPDATE: 46235, FISCALRATE: 1, TAXDATE: 46235, CUSTOMERID: "B-006",
+                    PRINTED: 0, ARACCOUNT: 110302, CURRENCYNAME: "IDR",
+                    operation2: "Add", KeyID: 8261039, ITEMNO: "IPL-008", QUANTITY: 2,
+                    UNITRATIO: 1, UNITPRICE: 25000, BRUTOUNITPRICE: 25000, WAREHOUSEID: "CENTRE",
+                    QTYCONTROL: 0, SALESMANID: ""
+                }
+            ];
+
+            const worksheet = XLSX.utils.json_to_sheet(sampleAccurateData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "SalesInvoice");
+
+            loadWorkbook(workbook, "SalesInvoice_Accurate.xlsx");
+        });
+
+        // Event Listener: Data Contoh Umum
         btnSample.addEventListener('click', () => {
+            schemaModeSelect.value = 'generic';
+            accurateSettings.classList.add('hidden');
+            genericSettings.classList.remove('hidden');
+
             const sampleData = [
                 { ID_Produk: "PRD-001", Nama_Barang: "Laptop Pro 14", Kategori: "Elektronik", Harga: 18500000, Stok: 12 },
-                { ID_Produk: "PRD-002", Nama_Barang: "Keyboard Mekanikal", Kategori: "Aksesoris & PC", Harga: 850000, Stok: 35 },
-                { ID_Produk: "PRD-003", Nama_Barang: "Monitor 27\" 4K", Kategori: "Elektronik", Harga: 5200000, Stok: 8 }
+                { ID_Produk: "PRD-002", Nama_Barang: "Keyboard Mekanikal", Kategori: "Aksesoris & PC", Harga: 850000, Stok: 35 }
             ];
 
             const worksheet = XLSX.utils.json_to_sheet(sampleData);
@@ -505,17 +803,20 @@
         });
 
         // Event Listeners: Perubahan Pengaturan Real-time
-        [sheetSelect, rootTagInput, rowTagInput, chkXmlDeclaration, chkPrettyPrint, chkUseAttributes].forEach(el => {
+        [
+            sheetSelect, accEximId, accBranchCode, chkOmitEmpty,
+            rootTagInput, rowTagInput, chkXmlDeclaration, chkPrettyPrint, chkUseAttributes
+        ].forEach(el => {
             el.addEventListener('input', convertSheetToXml);
             el.addEventListener('change', convertSheetToXml);
         });
 
-        // Event Listener: Salin ke Clipboard (Menggunakan execCommand agar kompatibel di iframe)
+        // Event Listener: Salin ke Clipboard
         btnCopy.addEventListener('click', () => {
             if (!xmlOutput.value) return;
             
             xmlOutput.select();
-            xmlOutput.setSelectionRange(0, 99999); // Untuk perangkat mobile
+            xmlOutput.setSelectionRange(0, 99999);
             
             try {
                 document.execCommand('copy');
@@ -532,7 +833,6 @@
                 e.preventDefault();
                 return;
             }
-            // Tampilkan tips jika lingkungan pratinjau memblokir pengunduhan otomatis
             downloadFallbackBanner.classList.remove('hidden');
             showToast(`Memproses unduhan ${currentFileName}.xml...`, 'success');
         });
